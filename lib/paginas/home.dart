@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../modelos/lugares.dart';
 import '../servicios/lugarService.dart';
-import 'lugarDetalle.dart';
-import 'inicioSesion.dart';
+import '../paginas/lugarDetalle.dart';
+import '../paginas/inicioSesion.dart';
+import '../paginas/gestionUsuarioComentarios.dart';
+import '../paginas/gestionLugares.dart';
+import '../servicios/sesionService.dart';
+import '../modelos/usuarioSesion.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,17 +17,26 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late Future<List<Lugare>> _lugaresFuture;
-  bool usuarioAutenticado = false; // Simulación de sesión iniciada
+  UsuarioSesion? usuarioSesion;
 
   @override
   void initState() {
     super.initState();
     _lugaresFuture = fetchLugares();
+    _cargarSesion();
   }
 
-  void _cerrarSesion() {
+  void _cargarSesion() async {
+    UsuarioSesion? sesion = await SesionService.obtenerUsuarioSesion();
     setState(() {
-      usuarioAutenticado = false;
+      usuarioSesion = sesion;
+    });
+  }
+
+  void _cerrarSesion() async {
+    await SesionService.cerrarSesion();
+    setState(() {
+      usuarioSesion = null;
     });
   }
 
@@ -33,12 +46,23 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(builder: (_) => const InicioSesionPage()),
     );
 
-    // Si se inició sesión exitosamente, el resultado debe ser true
     if (resultado == true) {
-      setState(() {
-        usuarioAutenticado = true;
-      });
+      _cargarSesion();
     }
+  }
+
+  void _irAGestionUsuariosComentarios() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const GestionUsuariosComentariosPage()),
+    );
+  }
+
+  void _irAGestionLugares() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const GestionLugaresPage()),
+    );
   }
 
   @override
@@ -47,7 +71,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Lugares'),
         actions: [
-          usuarioAutenticado
+          usuarioSesion != null
               ? IconButton(
                   icon: const Icon(Icons.logout),
                   tooltip: 'Cerrar sesión',
@@ -117,6 +141,26 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+      floatingActionButton: usuarioSesion?.rol == 'administrador'
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'usuarios',
+                  onPressed: _irAGestionUsuariosComentarios,
+                  icon: const Icon(Icons.people),
+                  label: const Text('Usuarios/Comentarios'),
+                ),
+                const SizedBox(height: 10),
+                FloatingActionButton.extended(
+                  heroTag: 'lugares',
+                  onPressed: _irAGestionLugares,
+                  icon: const Icon(Icons.place),
+                  label: const Text('Lugares'),
+                ),
+              ],
+            )
+          : null,
     );
   }
 }

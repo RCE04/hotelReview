@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../modelos/usuarios.dart';
+import 'comentarioService.dart';
 
 const String usuariosBaseUrl = 'https://localhost:7115/api/Usuarios';
 
@@ -44,6 +45,19 @@ Future<bool> deleteUsuario(int id) async {
   return response.statusCode == 204;
 }
 
+/// Nueva función para eliminar usuario y sus comentarios
+Future<bool> eliminarUsuarioConComentarios(int usuarioId) async {
+  // Primero eliminar comentarios del usuario
+  bool comentariosEliminados = await eliminarComentariosPorUsuario(usuarioId);
+  if (!comentariosEliminados) {
+    return false; // Si falla eliminar comentarios, no seguimos
+  }
+
+  // Luego eliminar usuario
+  bool usuarioEliminado = await deleteUsuario(usuarioId);
+  return usuarioEliminado;
+}
+
 /// 🔐 Función de login
 Future<Usuario?> login(String nombreUsuario, String contrasena) async {
   final response = await http.get(Uri.parse(usuariosBaseUrl));
@@ -52,7 +66,6 @@ Future<Usuario?> login(String nombreUsuario, String contrasena) async {
     List<dynamic> data = jsonDecode(response.body);
     final usuarios = data.map((json) => Usuario.fromJson(json)).toList();
 
-    // Buscar coincidencia exacta (según API, el campo es "contraseña")
     try {
       return usuarios.firstWhere(
         (u) =>
@@ -60,7 +73,7 @@ Future<Usuario?> login(String nombreUsuario, String contrasena) async {
             u.Contrasena == contrasena,
       );
     } catch (_) {
-      return null; // No encontrado
+      return null;
     }
   } else {
     throw Exception('Error al validar usuario');

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../servicios/usuarioService.dart';
 import '../servicios/sesionService.dart'; // Importación necesaria
 import '../modelos/usuarios.dart';
+import '../modelos/usuarioSesion.dart'; // Importar modelo de sesión
 
 class InicioSesionPage extends StatefulWidget {
   const InicioSesionPage({super.key});
@@ -24,10 +25,14 @@ class _InicioSesionPageState extends State<InicioSesionPage> {
       final Usuario? usuarioLogueado = await login(usuario, contrasena);
 
       if (usuarioLogueado != null) {
-        // Guardar el ID del usuario en SharedPreferences
-        await SesionService.guardarUsuarioId(usuarioLogueado.Id!); // ← corrección aquí
+        // Guardar sesión completa del usuario
+        final sesion = UsuarioSesion(
+          id: usuarioLogueado.Id!,
+          nombreUsuario: usuarioLogueado.NombreUsuario,
+          rol: usuarioLogueado.Rol,
+        );
+        await SesionService.guardarUsuarioSesion(sesion);
 
-        // Volver a la pantalla anterior (o cambiar de ruta si lo prefieres)
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
