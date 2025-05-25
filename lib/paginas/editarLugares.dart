@@ -17,6 +17,7 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
   late TextEditingController _direccionController;
   late TextEditingController _descripcionController;
   late TextEditingController _precioController;
+  late TextEditingController _imagenController;
 
   @override
   void initState() {
@@ -26,6 +27,7 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
     _direccionController = TextEditingController(text: lugar?.Direccion ?? '');
     _descripcionController = TextEditingController(text: lugar?.Descripcion ?? '');
     _precioController = TextEditingController(text: lugar?.Precio ?? '');
+    _imagenController = TextEditingController(text: lugar?.Imagen ?? '');
   }
 
   @override
@@ -34,6 +36,7 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
     _direccionController.dispose();
     _descripcionController.dispose();
     _precioController.dispose();
+    _imagenController.dispose();
     super.dispose();
   }
 
@@ -45,6 +48,7 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
         Direccion: _direccionController.text,
         Descripcion: _descripcionController.text,
         Precio: _precioController.text,
+        Imagen: _imagenController.text,
       );
 
       bool exito = widget.lugar == null
@@ -64,6 +68,7 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
   @override
   Widget build(BuildContext context) {
     final esEdicion = widget.lugar != null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(esEdicion ? 'Editar Lugar' : 'Agregar Lugar'),
@@ -99,6 +104,21 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
                   return null;
                 },
               ),
+              TextFormField(
+                controller: _imagenController,
+                decoration: const InputDecoration(labelText: 'URL de la imagen'),
+                onChanged: (_) => setState(() {}),
+                validator: (value) => value == null || value.isEmpty ? 'Ingrese la URL de la imagen' : null,
+              ),
+              const SizedBox(height: 10),
+              _imagenController.text.isNotEmpty
+                  ? Image.network(
+                      _imagenController.text,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Text('No se pudo cargar la imagen'),
+                    )
+                  : const Text('Vista previa de la imagen'),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _guardarLugar,

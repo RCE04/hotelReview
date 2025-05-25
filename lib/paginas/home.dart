@@ -20,9 +20,15 @@ class _HomePageState extends State<HomePage> {
   late Future<List<Lugare>> _lugaresFuture;
   List<Lugare> _lugaresOriginales = [];
   List<Lugare> _lugaresFiltrados = [];
+
+  // Cambié de una a dos variables para los filtros
   String _filtroNombre = '';
   String _filtroDireccion = '';
+
+  String _ordenSeleccionado = 'precio';
   UsuarioSesion? usuarioSesion;
+
+  static const String apiBaseUrl = 'https://localhost:7115/api/Lugares';
 
   @override
   void initState() {
@@ -77,22 +83,21 @@ class _HomePageState extends State<HomePage> {
   void _irAEditarLugar() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const EditarLugarPage()), // Modo crear
+      MaterialPageRoute(builder: (_) => const EditarLugarPage()),
     );
   }
 
   void _aplicarFiltrosYOrden() {
     List<Lugare> lista = _lugaresOriginales.where((lugar) {
-      final coincideNombre = lugar.NombreLugar.toLowerCase().contains(_filtroNombre.toLowerCase());
-      final coincideDireccion = lugar.Direccion.toLowerCase().contains(_filtroDireccion.toLowerCase());
-      return coincideNombre && coincideDireccion;
+      final nombreMatch = lugar.NombreLugar.toLowerCase().contains(_filtroNombre.toLowerCase());
+      final direccionMatch = lugar.Direccion.toLowerCase().contains(_filtroDireccion.toLowerCase());
+      return nombreMatch && direccionMatch;
     }).toList();
 
-    lista.sort((a, b) {
-      double precioA = double.tryParse(a.Precio) ?? 0;
-      double precioB = double.tryParse(b.Precio) ?? 0;
-      return precioA.compareTo(precioB);
-    });
+    if (_ordenSeleccionado == 'precio') {
+      lista.sort((a, b) =>
+          double.tryParse(a.Precio)!.compareTo(double.tryParse(b.Precio)!));
+    }
 
     setState(() {
       _lugaresFiltrados = lista;
@@ -131,6 +136,7 @@ class _HomePageState extends State<HomePage> {
 
           return Column(
             children: [
+              // Aquí el cambio: dos TextFields separados para filtro nombre y dirección
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -142,8 +148,10 @@ class _HomePageState extends State<HomePage> {
                         prefixIcon: Icon(Icons.search),
                       ),
                       onChanged: (value) {
-                        _filtroNombre = value;
-                        _aplicarFiltrosYOrden();
+                        setState(() {
+                          _filtroNombre = value;
+                          _aplicarFiltrosYOrden();
+                        });
                       },
                     ),
                     const SizedBox(height: 10),
@@ -151,20 +159,36 @@ class _HomePageState extends State<HomePage> {
                       decoration: const InputDecoration(
                         labelText: 'Buscar por dirección',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_on),
+                        prefixIcon: Icon(Icons.search),
                       ),
                       onChanged: (value) {
-                        _filtroDireccion = value;
-                        _aplicarFiltrosYOrden();
+                        setState(() {
+                          _filtroDireccion = value;
+                          _aplicarFiltrosYOrden();
+                        });
                       },
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: const [
-                        Icon(Icons.sort),
-                        SizedBox(width: 10),
-                        Text('Ordenado por precio (ascendente)'),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  children: [
+                    const Text('Ordenar por: '),
+                    const SizedBox(width: 10),
+                    DropdownButton<String>(
+                      value: _ordenSeleccionado,
+                      items: const [
+                        DropdownMenuItem(value: 'precio', child: Text('Precio')),
                       ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          _ordenSeleccionado = value;
+                          _aplicarFiltrosYOrden();
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -185,26 +209,54 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                       child: Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         elevation: 4,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                lugar.NombreLugar,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (lugar.Imagen.isNotEmpty)
+                              ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(12),
+                                  bottomLeft: Radius.circular(12),
+                                ),
+                                child: Image.network(
+                                  // Aquí cambiamos la URL para que use el proxy de imágenes
+                                  '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) =>
+                                          const Icon(Icons.broken_image,
+                                              size: 120),
+                                ),
                               ),
-                              const SizedBox(height: 8),
-                              Text('Dirección: ${lugar.Direccion}'),
-                              Text('Descripción: ${lugar.Descripcion}'),
-                              Text('Precio: ${lugar.Precio}'),
-                            ],
-                          ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      lugar.NombreLugar,
+                                      style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text('Dirección: ${lugar.Direccion}'),
+                                    Text('Descripción: ${lugar.Descripcion}'),
+                                    Text('Precio: ${lugar.Precio}'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
