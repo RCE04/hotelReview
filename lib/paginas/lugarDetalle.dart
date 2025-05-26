@@ -18,6 +18,7 @@ class LugarDetallePage extends StatefulWidget {
 class _LugarDetallePageState extends State<LugarDetallePage> {
   late Future<List<Comentario>> _comentariosFuture;
   int? _usuarioId;
+  static const String apiBaseUrl = 'https://localhost:7115/api/Lugares';
 
   @override
   void initState() {
@@ -28,7 +29,6 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
 
   Future<void> _cargarSesion() async {
     final id = await SesionService.obtenerUsuarioId();
-    print('🟡 ID de sesión: $id');
     setState(() {
       _usuarioId = id;
     });
@@ -62,82 +62,120 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
     final lugar = widget.lugar;
 
     return Scaffold(
-      appBar: AppBar(title: Text(lugar.NombreLugar)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Dirección: ${lugar.Direccion}', style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 8),
-            Text('Descripción: ${lugar.Descripcion}', style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 8),
-            Text('Precio: ${lugar.Precio}', style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 16),
-            FutureBuilder<List<Comentario>>(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 250,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Image.network(
+                '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.broken_image, size: 60),
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    lugar.NombreLugar,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Dirección: ${lugar.Direccion}', style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text('Descripción: ${lugar.Descripcion}', style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text('Precio por noche: ${lugar.Precio}', style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 16),
+                  FutureBuilder<List<Comentario>>(
+                    future: _comentariosFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Text('No hay puntuaciones aún.');
+                      }
+
+                      final comentarios = snapshot.data!;
+                      final puntuaciones = comentarios
+                          .map((c) => double.tryParse(c.puntuacion) ?? 0.0)
+                          .toList();
+
+                      final media = puntuaciones.reduce((a, b) => a + b) / puntuaciones.length;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Puntuación media:',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              _buildPuntuacionStars(media),
+                              const SizedBox(width: 8),
+                              Text(media.toStringAsFixed(1), style: const TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const Divider(height: 32),
+                  const Text('Comentarios:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: FutureBuilder<List<Comentario>>(
               future: _comentariosFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
+                  return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Text('No hay puntuaciones aún.');
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('No hay comentarios disponibles.'),
+                  );
                 }
 
                 final comentarios = snapshot.data!;
-                final puntuaciones = comentarios
-                    .map((c) => double.tryParse(c.puntuacion) ?? 0.0)
-                    .toList();
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: comentarios.length,
+                  itemBuilder: (context, index) {
+                    final c = comentarios[index];
+                    final puntuacion = double.tryParse(c.puntuacion) ?? 0.0;
 
-                final media = puntuaciones.reduce((a, b) => a + b) / puntuaciones.length;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Puntuación media:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Row(
-                      children: [
-                        _buildPuntuacionStars(media),
-                        const SizedBox(width: 8),
-                        Text(media.toStringAsFixed(1), style: const TextStyle(fontSize: 16)),
-                      ],
-                    ),
-                  ],
-                );
-              },
-            ),
-            const Divider(height: 32),
-            const Text('Comentarios:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Expanded(
-              child: FutureBuilder<List<Comentario>>(
-                future: _comentariosFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Text('No hay comentarios disponibles.');
-                  }
-
-                  final comentarios = snapshot.data!;
-                  return ListView.builder(
-                    itemCount: comentarios.length,
-                    itemBuilder: (context, index) {
-                      final c = comentarios[index];
-                      final puntuacion = double.tryParse(c.puntuacion) ?? 0.0;
-
-                      return FutureBuilder<String>(
-                        future: _getUsuarioNombre(c.usuarioId),
-                        builder: (context, userSnapshot) {
-                          final nombre = userSnapshot.data ?? 'Usuario';
-                          return ListTile(
-                            title: Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Column(
+                    return FutureBuilder<String>(
+                      future: _getUsuarioNombre(c.usuarioId),
+                      builder: (context, userSnapshot) {
+                        final nombre = userSnapshot.data ?? 'Usuario';
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
                                 Text(c.comentarioLugar),
                                 const SizedBox(height: 4),
                                 Row(
@@ -149,35 +187,33 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                                 ),
                               ],
                             ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_usuarioId != null)
-              Center(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.add_comment),
-                  label: const Text('Añadir Comentario'),
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/crearComentario',
-                      arguments: {
-                        'lugarId': lugar.Id,
-                        'usuarioId': _usuarioId,
+                          ),
+                        );
                       },
                     );
                   },
-                ),
-              ),
-          ],
-        ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
+      floatingActionButton: _usuarioId != null
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/crearComentario',
+                  arguments: {
+                    'lugarId': lugar.Id,
+                    'usuarioId': _usuarioId,
+                  },
+                );
+              },
+              icon: const Icon(Icons.add_comment),
+              label: const Text('Añadir Comentario'),
+            )
+          : null,
     );
   }
 }

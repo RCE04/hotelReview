@@ -21,7 +21,6 @@ class _HomePageState extends State<HomePage> {
   List<Lugare> _lugaresOriginales = [];
   List<Lugare> _lugaresFiltrados = [];
 
-  // Cambié de una a dos variables para los filtros
   String _filtroNombre = '';
   String _filtroDireccion = '';
 
@@ -108,7 +107,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lugares'),
+        title: const Text('HotelReview'),
         actions: [
           usuarioSesion != null
               ? IconButton(
@@ -136,7 +135,6 @@ class _HomePageState extends State<HomePage> {
 
           return Column(
             children: [
-              // Aquí el cambio: dos TextFields separados para filtro nombre y dirección
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -171,7 +169,6 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Row(
@@ -209,51 +206,73 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                       child: Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        elevation: 6,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Row(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (lugar.Imagen.isNotEmpty)
-                              ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(12),
-                                  bottomLeft: Radius.circular(12),
-                                ),
-                                child: Image.network(
-                                  // Aquí cambiamos la URL para que use el proxy de imágenes
-                                  '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
-                                  width: 120,
-                                  height: 120,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) =>
-                                          const Icon(Icons.broken_image,
-                                              size: 120),
+                            ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              ),
+                              child: Image.network(
+                                '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
+                                width: double.infinity,
+                                height: 180,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  height: 180,
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.broken_image, size: 60),
                                 ),
                               ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      lugar.NombreLugar,
-                                      style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    lugar.NombreLugar,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text('Dirección: ${lugar.Direccion}'),
-                                    Text('Descripción: ${lugar.Descripcion}'),
-                                    Text('Precio: ${lugar.Precio}'),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          lugar.Direccion,
+                                          style: const TextStyle(color: Colors.grey),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    lugar.Descripcion,
+                                    style: const TextStyle(fontSize: 14),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Precio por noche: \$${lugar.Precio}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
