@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../modelos/lugares.dart';
 import '../modelos/comentarios.dart';
 import '../modelos/usuarios.dart';
@@ -18,7 +19,7 @@ class LugarDetallePage extends StatefulWidget {
 class _LugarDetallePageState extends State<LugarDetallePage> {
   late Future<List<Comentario>> _comentariosFuture;
   int? _usuarioId;
-  static const String apiBaseUrl = 'https://localhost:7115/api/Lugares';
+  static const String apiBaseUrl = 'https://localhost:7115/api';
 
   @override
   void initState() {
@@ -32,6 +33,23 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
     setState(() {
       _usuarioId = id;
     });
+  }
+
+  Future<void> _anadirAFavoritos() async {
+    if (_usuarioId == null) return;
+
+    final url = Uri.parse('$apiBaseUrl/Usuarios/$_usuarioId/favorito/${widget.lugar.Id}');
+    final response = await http.post(url);
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lugar añadido a favoritos')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al añadir a favoritos')),
+      );
+    }
   }
 
   Widget _buildPuntuacionStars(double puntuacion) {
@@ -69,7 +87,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               background: Image.network(
-                '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
+                '$apiBaseUrl/Lugares/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.grey[300],
@@ -94,6 +112,20 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                   Text('Descripción: ${lugar.Descripcion}', style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 8),
                   Text('Precio por noche: ${lugar.Precio}', style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 16),
+                  if (_usuarioId != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.favorite_border),
+                        label: const Text('Añadir a Favoritos'),
+                        onPressed: _anadirAFavoritos,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 16),
                   FutureBuilder<List<Comentario>>(
                     future: _comentariosFuture,

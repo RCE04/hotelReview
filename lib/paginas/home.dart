@@ -8,6 +8,7 @@ import '../paginas/gestionLugares.dart';
 import '../servicios/sesionService.dart';
 import '../modelos/usuarioSesion.dart';
 import '../paginas/editarLugares.dart';
+import '../paginas/favoritos.dart'; // 👈 Asegúrate de tener esta importación
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,7 +24,6 @@ class _HomePageState extends State<HomePage> {
 
   String _filtroNombre = '';
   String _filtroDireccion = '';
-
   String _ordenSeleccionado = 'precio';
   UsuarioSesion? usuarioSesion;
 
@@ -109,17 +109,31 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('HotelReview'),
         actions: [
-          usuarioSesion != null
-              ? IconButton(
-                  icon: const Icon(Icons.logout),
-                  tooltip: 'Cerrar sesión',
-                  onPressed: _cerrarSesion,
-                )
-              : IconButton(
-                  icon: const Icon(Icons.login),
-                  tooltip: 'Iniciar sesión',
-                  onPressed: _irAInicioSesion,
-                ),
+          if (usuarioSesion != null) ...[
+            IconButton(
+              icon: const Icon(Icons.favorite),
+              tooltip: 'Favoritos',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FavoritosPage(usuarioId: usuarioSesion!.id),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Cerrar sesión',
+              onPressed: _cerrarSesion,
+            ),
+          ] else ...[
+            IconButton(
+              icon: const Icon(Icons.login),
+              tooltip: 'Iniciar sesión',
+              onPressed: _irAInicioSesion,
+            ),
+          ],
         ],
       ),
       body: FutureBuilder<List<Lugare>>(

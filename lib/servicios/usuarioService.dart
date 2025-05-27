@@ -89,3 +89,11 @@ Future<Usuario> fetchUsuarioPorId(int usuarioId) async {
     throw Exception('Error al cargar usuario con ID $usuarioId');
   }
 }
+
+Future<bool> agregarFavorito(int usuarioId, int lugarId) async {
+  final url = Uri.parse('$usuariosBaseUrl/$usuarioId/favorito/$lugarId');
+  
+  final response = await http.post(url);
+
+  return response.statusCode == 200 || response.statusCode == 204;
+}
