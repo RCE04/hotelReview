@@ -64,3 +64,12 @@ Future<bool> eliminarComentariosPorUsuario(int usuarioId) async {
 
   return response.statusCode == 204;
 }
+
+Future<bool> deleteComentariosPorLugar(int lugarId) async {
+  final response = await http.delete(
+    Uri.parse('https://localhost:7115/api/Comentarios/lugar/$lugarId'),
+    headers: {'Content-Type': 'application/json; charset=UTF-8'},
+  );
+
+  return response.statusCode == 204;
+}

@@ -56,6 +56,7 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
           : await updateLugare(nuevoLugar);
 
       if (exito) {
+        // Aquí indicamos que se guardó correctamente para que HomePage recargue
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

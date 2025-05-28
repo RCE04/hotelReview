@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../modelos/lugares.dart';
 import '../servicios/lugarService.dart';
+import '../servicios/comentarioService.dart'; // Importa el servicio de comentarios
 import 'editarLugares.dart';
 
 class GestionLugaresPage extends StatefulWidget {
@@ -30,7 +31,7 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content: const Text('¿Deseas eliminar este lugar?'),
+        content: const Text('¿Deseas eliminar este lugar y sus comentarios?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
           ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
@@ -39,12 +40,23 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
     );
 
     if (confirmacion == true) {
-      final exito = await deleteLugare(id);
-      if (exito) {
-        _cargarLugares();
+      final comentariosEliminados = await deleteComentariosPorLugar(id);
+
+      if (comentariosEliminados) {
+        final lugarEliminado = await deleteLugare(id);
+        if (lugarEliminado) {
+          _cargarLugares();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Lugar y sus comentarios eliminados exitosamente.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error al eliminar el lugar.')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al eliminar el lugar')),
+          const SnackBar(content: Text('Error al eliminar los comentarios del lugar.')),
         );
       }
     }

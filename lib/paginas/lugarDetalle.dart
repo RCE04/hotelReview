@@ -232,15 +232,20 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
       ),
       floatingActionButton: _usuarioId != null
           ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.pushNamed(
+              onPressed: () async {
+                final resultado = await Navigator.pushNamed(
                   context,
                   '/crearComentario',
                   arguments: {
-                    'lugarId': lugar.Id,
+                    'lugarId': widget.lugar.Id,
                     'usuarioId': _usuarioId,
                   },
                 );
+                if (resultado == true) {
+                  setState(() {
+                    _comentariosFuture = fetchComentariosPorLugar(widget.lugar.Id);
+                  });
+                }
               },
               icon: const Icon(Icons.add_comment),
               label: const Text('Añadir Comentario'),

@@ -8,7 +8,7 @@ import '../paginas/gestionLugares.dart';
 import '../servicios/sesionService.dart';
 import '../modelos/usuarioSesion.dart';
 import '../paginas/editarLugares.dart';
-import '../paginas/favoritos.dart'; // 👈 Asegúrate de tener esta importación
+import '../paginas/favoritos.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,12 +32,18 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _lugaresFuture = fetchLugares();
-    _lugaresFuture.then((lugares) {
-      _lugaresOriginales = lugares;
-      _aplicarFiltrosYOrden();
-    });
+    _cargarLugares();
     _cargarSesion();
+  }
+
+  void _cargarLugares() {
+    setState(() {
+      _lugaresFuture = fetchLugares();
+      _lugaresFuture.then((lugares) {
+        _lugaresOriginales = lugares;
+        _aplicarFiltrosYOrden();
+      });
+    });
   }
 
   void _cargarSesion() async {
@@ -79,11 +85,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _irAEditarLugar() {
-    Navigator.push(
+  // Modificado para esperar resultado y recargar si es true
+  void _irAEditarLugar({Lugare? lugar}) async {
+    final resultado = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const EditarLugarPage()),
+      MaterialPageRoute(builder: (_) => EditarLugarPage(lugar: lugar)),
     );
+
+    if (resultado == true) {
+      _cargarLugares();
+    }
   }
 
   void _aplicarFiltrosYOrden() {
@@ -322,7 +333,7 @@ class _HomePageState extends State<HomePage> {
                 ],
                 FloatingActionButton.extended(
                   heroTag: 'agregarLugar',
-                  onPressed: _irAEditarLugar,
+                  onPressed: () => _irAEditarLugar(),
                   icon: const Icon(Icons.add),
                   label: const Text('Agregar Lugar'),
                 ),

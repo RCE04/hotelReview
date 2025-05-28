@@ -43,5 +43,6 @@ Future<bool> deleteLugare(int id) async {
     headers: {'Content-Type': 'application/json; charset=UTF-8'},
   );
 
-  return response.statusCode == 204;
+  return response.statusCode == 204; // 204 = No Content
 }
+
