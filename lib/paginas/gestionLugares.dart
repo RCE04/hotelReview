@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../modelos/lugares.dart';
 import '../servicios/lugarService.dart';
-import '../servicios/comentarioService.dart'; // Importa el servicio de comentarios
+import '../servicios/comentarioService.dart';
 import 'editarLugares.dart';
 
 class GestionLugaresPage extends StatefulWidget {
@@ -33,8 +33,14 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
         title: const Text('Confirmar eliminación'),
         content: const Text('¿Deseas eliminar este lugar y sus comentarios?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
         ],
       ),
     );
@@ -75,50 +81,72 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestión de Lugares')),
+      appBar: AppBar(
+        title: const Text('Gestión de Lugares'),
+        backgroundColor: Colors.purple[700],
+      ),
       body: FutureBuilder<List<Lugare>>(
         future: _lugaresFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Colors.purple));
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No hay lugares disponibles.'));
+            return const Center(child: Text('No hay lugares disponibles.', style: TextStyle(color: Colors.purple)));
           }
 
           final lugares = snapshot.data!;
           return ListView.builder(
+            padding: const EdgeInsets.all(8),
             itemCount: lugares.length,
             itemBuilder: (context, index) {
               final lugar = lugares[index];
-              return ListTile(
-                title: Text(lugar.NombreLugar),
-                subtitle: Text('Dirección: ${lugar.Direccion}\nPrecio: ${lugar.Precio}'),
-                isThreeLine: true,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _abrirFormulario(lugar: lugar),
+              return Card(
+                elevation: 4,
+                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  title: Text(
+                    lugar.NombreLugar,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'Dirección: ${lugar.Direccion}\nPrecio: ${lugar.Precio}',
+                      style: const TextStyle(fontSize: 14, color: Colors.black87),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _eliminarLugar(lugar.Id),
-                    ),
-                  ],
+                  ),
+                  isThreeLine: true,
+                  trailing: Wrap(
+                    spacing: 12,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.grey),
+                        tooltip: 'Editar Lugar',
+                        onPressed: () => _abrirFormulario(lugar: lugar),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Eliminar Lugar',
+                        onPressed: () => _eliminarLugar(lugar.Id),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _abrirFormulario(),
-        child: const Icon(Icons.add),
-        tooltip: 'Agregar Lugar',
-      ),
+floatingActionButton: FloatingActionButton(
+  backgroundColor: Colors.white,  // Fondo blanco
+  tooltip: 'Agregar Lugar',
+  child: const Icon(Icons.add, color: Colors.purple), // Icono morado
+  onPressed: () => _abrirFormulario(),
+),
     );
   }
 }

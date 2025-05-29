@@ -23,10 +23,8 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
   }
 
   void _eliminarUsuario(int id) async {
-    // Primero eliminar los comentarios asociados al usuario
     bool comentariosEliminados = await eliminarComentariosPorUsuario(id);
     if (comentariosEliminados) {
-      // Luego eliminar el usuario
       bool usuarioEliminado = await deleteUsuario(id);
       if (usuarioEliminado) {
         setState(() {
@@ -51,57 +49,87 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
   void _eliminarComentario(int id) async {
     await deleteComentario(id);
     setState(() => _comentariosFuture = fetchComentarios());
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Comentario eliminado')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestión de Usuarios y Comentarios')),
+      appBar: AppBar(
+        title: const Text('Gestión de Usuarios y Comentarios'),
+        backgroundColor: Colors.deepPurple,
+      ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text('Usuarios', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text(
+              'Usuarios',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.deepPurple),
             ),
+            const SizedBox(height: 10),
             FutureBuilder<List<Usuario>>(
               future: _usuariosFuture,
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const CircularProgressIndicator();
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Text('No hay usuarios disponibles.');
+                }
+
                 return Column(
                   children: snapshot.data!.map((usuario) {
-                    return ListTile(
-                      title: Text(usuario.NombreUsuario),
-                      subtitle: Text('Rol: ${usuario.Rol}'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _eliminarUsuario(usuario.Id!),
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      child: ListTile(
+                        leading: const Icon(Icons.person, color: Colors.deepPurple),
+                        title: Text(usuario.NombreUsuario),
+                        subtitle: Text('Rol: ${usuario.Rol}'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _eliminarUsuario(usuario.Id!),
+                        ),
                       ),
                     );
                   }).toList(),
                 );
               },
             ),
+            const SizedBox(height: 20),
             const Divider(),
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text('Comentarios', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            const Text(
+              'Comentarios',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.deepPurple),
             ),
+            const SizedBox(height: 10),
             FutureBuilder<List<Comentario>>(
               future: _comentariosFuture,
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const CircularProgressIndicator();
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Text('No hay comentarios disponibles.');
+                }
+
                 return Column(
                   children: snapshot.data!.map((comentario) {
-                    return ListTile(
-                      title: Text(comentario.comentarioLugar),
-                      subtitle: Text('ID Lugar: ${comentario.lugarId}, Usuario ID: ${comentario.usuarioId}'),
-                      trailing: comentario.id != null
-                          ? IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _eliminarComentario(comentario.id!),
-                            )
-                          : const SizedBox(), // Si no tiene ID, no muestra el botón
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      child: ListTile(
+                        leading: const Icon(Icons.comment, color: Colors.deepPurpleAccent),
+                        title: Text(comentario.comentarioLugar),
+                        subtitle: Text('Lugar ID: ${comentario.lugarId} | Usuario ID: ${comentario.usuarioId}'),
+                        trailing: comentario.id != null
+                            ? IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _eliminarComentario(comentario.id!),
+                              )
+                            : const SizedBox(),
+                      ),
                     );
                   }).toList(),
                 );

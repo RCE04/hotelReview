@@ -85,7 +85,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Modificado para esperar resultado y recargar si es true
   void _irAEditarLugar({Lugare? lugar}) async {
     final resultado = await Navigator.push(
       context,
@@ -160,39 +159,44 @@ class _HomePageState extends State<HomePage> {
 
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: const InputDecoration(
-                        labelText: 'Buscar por nombre',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.search),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _filtroNombre = value;
-                          _aplicarFiltrosYOrden();
-                        });
-                      },
+              ExpansionTile(
+                title: const Text('Filtros de búsqueda'),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          decoration: const InputDecoration(
+                            labelText: 'Buscar por nombre',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _filtroNombre = value;
+                              _aplicarFiltrosYOrden();
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          decoration: const InputDecoration(
+                            labelText: 'Buscar por dirección',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _filtroDireccion = value;
+                              _aplicarFiltrosYOrden();
+                            });
+                          },
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      decoration: const InputDecoration(
-                        labelText: 'Buscar por dirección',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.search),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _filtroDireccion = value;
-                          _aplicarFiltrosYOrden();
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -202,13 +206,17 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 10),
                     DropdownButton<String>(
                       value: _ordenSeleccionado,
+                      underline: const SizedBox(),
+                      style: const TextStyle(color: Colors.black, fontSize: 16),
                       items: const [
                         DropdownMenuItem(value: 'precio', child: Text('Precio')),
                       ],
                       onChanged: (value) {
                         if (value != null) {
-                          _ordenSeleccionado = value;
-                          _aplicarFiltrosYOrden();
+                          setState(() {
+                            _ordenSeleccionado = value;
+                            _aplicarFiltrosYOrden();
+                          });
                         }
                       },
                     ),
@@ -261,12 +269,18 @@ class _HomePageState extends State<HomePage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    lugar.NombreLugar,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          lugar.NombreLugar,
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 8),
                                   Row(
@@ -285,12 +299,12 @@ class _HomePageState extends State<HomePage> {
                                   Text(
                                     lugar.Descripcion,
                                     style: const TextStyle(fontSize: 14),
-                                    maxLines: 3,
+                                    maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 12),
+                                  const Divider(height: 20),
                                   Text(
-                                    'Precio por noche: \$${lugar.Precio}',
+                                    'Precio por noche: ${double.tryParse(lugar.Precio)} €',
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,

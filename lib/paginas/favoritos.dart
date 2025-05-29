@@ -15,6 +15,8 @@ class _FavoritosPageState extends State<FavoritosPage> {
   List<dynamic> favoritos = [];
   bool cargando = true;
 
+  static const String apiBaseUrl = 'https://localhost:7115/api/Lugares';
+
   @override
   void initState() {
     super.initState();
@@ -57,15 +59,83 @@ class _FavoritosPageState extends State<FavoritosPage> {
                   itemCount: favoritos.length,
                   itemBuilder: (context, index) {
                     final lugar = favoritos[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      child: ListTile(
-                        leading: const Icon(Icons.place, color: Colors.redAccent),
-                        title: Text(lugar['nombreLugar'] ?? 'Sin nombre'),
-                        subtitle: Text(lugar['descripcion'] ?? 'Sin descripción'),
-                        onTap: () {
-                          // Aquí puedes navegar al detalle del lugar si quieres
-                        },
+                    return GestureDetector(
+                      onTap: () {
+                        // Aquí puedes navegar a la página de detalle si la integras
+                        // Navigator.push(context, MaterialPageRoute(builder: (_) => LugarDetallePage(lugar: lugar)));
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                              ),
+                              child: Image.network(
+                                '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar['imagen'])}',
+                                width: double.infinity,
+                                height: 180,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  height: 180,
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.broken_image, size: 60),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    lugar['nombreLugar'] ?? 'Sin nombre',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          lugar['direccion'] ?? 'Sin dirección',
+                                          style: const TextStyle(color: Colors.grey),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    lugar['descripcion'] ?? 'Sin descripción',
+                                    style: const TextStyle(fontSize: 14),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Precio por noche: €${lugar['precio'] ?? '0.00'}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
