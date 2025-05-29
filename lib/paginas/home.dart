@@ -27,7 +27,8 @@ class _HomePageState extends State<HomePage> {
   String _ordenSeleccionado = 'precio';
   UsuarioSesion? usuarioSesion;
 
-  static const String apiBaseUrl = 'https://localhost:7115/api/Lugares';
+  // Nueva base URL de la API en Render
+  static const String apiBaseUrl = 'https://hotelreviewapi.onrender.com/api/Lugares';
 
   @override
   void initState() {
@@ -253,6 +254,7 @@ class _HomePageState extends State<HomePage> {
                                 topRight: Radius.circular(16),
                               ),
                               child: Image.network(
+                                // ✅ Imagen con proxy
                                 '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
                                 width: double.infinity,
                                 height: 180,

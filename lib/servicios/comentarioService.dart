@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../modelos/comentarios.dart';
 
-const String comentariosBaseUrl = 'https://localhost:7115/api/Comentarios';
+// Cambié la URL base para que use la pública de Render
+const String comentariosBaseUrl = 'https://hotelreviewapi.onrender.com/api/Comentarios';
 
 Future<List<Comentario>> fetchComentarios() async {
   final response = await http.get(Uri.parse(comentariosBaseUrl));
@@ -29,7 +30,7 @@ Future<List<Comentario>> fetchComentariosPorLugar(int lugarId) async {
 
 Future<bool> updateComentario(Comentario comentario) async {
   final response = await http.put(
-    Uri.parse('$comentariosBaseUrl/${comentario.id}'), // Corrección aquí
+    Uri.parse('$comentariosBaseUrl/${comentario.id}'),
     headers: {'Content-Type': 'application/json; charset=UTF-8'},
     body: jsonEncode(comentario.toJson()),
   );
@@ -67,7 +68,7 @@ Future<bool> eliminarComentariosPorUsuario(int usuarioId) async {
 
 Future<bool> deleteComentariosPorLugar(int lugarId) async {
   final response = await http.delete(
-    Uri.parse('https://localhost:7115/api/Comentarios/lugar/$lugarId'),
+    Uri.parse('$comentariosBaseUrl/lugar/$lugarId'),
     headers: {'Content-Type': 'application/json; charset=UTF-8'},
   );
 

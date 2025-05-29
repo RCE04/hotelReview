@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../modelos/usuarios.dart';
 import 'comentarioService.dart';
 
-const String usuariosBaseUrl = 'https://localhost:7115/api/Usuarios';
+const String usuariosBaseUrl = 'https://hotelreviewapi.onrender.com/api/Usuarios';
 
 Future<List<Usuario>> fetchUsuarios() async {
   final response = await http.get(Uri.parse(usuariosBaseUrl));
@@ -47,13 +47,11 @@ Future<bool> deleteUsuario(int id) async {
 
 /// Nueva función para eliminar usuario y sus comentarios
 Future<bool> eliminarUsuarioConComentarios(int usuarioId) async {
-  // Primero eliminar comentarios del usuario
   bool comentariosEliminados = await eliminarComentariosPorUsuario(usuarioId);
   if (!comentariosEliminados) {
-    return false; // Si falla eliminar comentarios, no seguimos
+    return false;
   }
 
-  // Luego eliminar usuario
   bool usuarioEliminado = await deleteUsuario(usuarioId);
   return usuarioEliminado;
 }

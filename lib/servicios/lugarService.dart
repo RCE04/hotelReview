@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 
 import '../modelos/lugares.dart';
 
-const String baseUrl = 'https://localhost:7115/api/Lugares';
+// Cambia la URL base a la pública
+const String baseUrl = 'https://hotelreviewapi.onrender.com/api/Lugares';
 
 Future<List<Lugare>> fetchLugares() async {
   final response = await http.get(Uri.parse(baseUrl));
@@ -45,4 +46,3 @@ Future<bool> deleteLugare(int id) async {
 
   return response.statusCode == 204; // 204 = No Content
 }
-
