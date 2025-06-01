@@ -49,7 +49,7 @@ class _FormularioComentarioState extends State<FormularioComentario> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Comentario enviado correctamente')),
         );
-        Navigator.pop(context, true);  // <-- Aquí retornamos true para indicar éxito
+        Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error al enviar el comentario')),
@@ -59,6 +59,19 @@ class _FormularioComentarioState extends State<FormularioComentario> {
       setState(() => _enviando = false);
     }
   }
+
+  InputDecoration _inputDeco(String label) => InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white30),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -73,55 +86,86 @@ class _FormularioComentarioState extends State<FormularioComentario> {
 
         return Scaffold(
           appBar: AppBar(title: const Text('Añadir Comentario')),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Tu comentario'),
-                  TextFormField(
-                    controller: _comentarioController,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      hintText: 'Escribe tu opinión aquí...',
-                      border: OutlineInputBorder(),
+          body: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                width: 460,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6A1B9A), // mismo morado
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      offset: Offset(0, 12),
+                      blurRadius: 18,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Escribe un comentario';
-                      }
-                      return null;
-                    },
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Tu comentario',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _comentarioController,
+                        maxLines: 4,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDeco('Escribe tu opinión aquí...'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Escribe un comentario';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Puntuación',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: _puntuacionSeleccionada,
+                        dropdownColor: const Color(0xFF6A1B9A),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDeco(''),
+                        items: ['1', '2', '3', '4', '5']
+                            .map((valor) => DropdownMenuItem(
+                                  value: valor,
+                                  child: Text(valor),
+                                ))
+                            .toList(),
+                        onChanged: (valor) {
+                          setState(() {
+                            _puntuacionSeleccionada = valor!;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _enviando ? null : _guardarComentario,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.purple,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: _enviando
+                            ? const CircularProgressIndicator()
+                            : const Text('Enviar Comentario'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  const Text('Puntuación'),
-                  DropdownButtonFormField<String>(
-                    value: _puntuacionSeleccionada,
-                    items: ['1', '2', '3', '4', '5']
-                        .map((valor) => DropdownMenuItem(
-                              value: valor,
-                              child: Text(valor),
-                            ))
-                        .toList(),
-                    onChanged: (valor) {
-                      setState(() {
-                        _puntuacionSeleccionada = valor!;
-                      });
-                    },
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
-                  ),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: _enviando ? null : _guardarComentario,
-                      child: _enviando
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Enviar Comentario'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

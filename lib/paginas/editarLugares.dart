@@ -40,6 +40,19 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
     super.dispose();
   }
 
+  InputDecoration _inputDeco(String label) => InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white30),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white),
+        ),
+      );
+
   void _guardarLugar() async {
     if (_formKey.currentState!.validate()) {
       final nuevoLugar = Lugare(
@@ -56,7 +69,6 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
           : await updateLugare(nuevoLugar);
 
       if (exito) {
-        // Aquí indicamos que se guardó correctamente para que HomePage recargue
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -74,58 +86,100 @@ class _EditarLugarPageState extends State<EditarLugarPage> {
       appBar: AppBar(
         title: Text(esEdicion ? 'Editar Lugar' : 'Agregar Lugar'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _nombreController,
-                decoration: const InputDecoration(labelText: 'Nombre'),
-                validator: (value) => value == null || value.isEmpty ? 'Ingrese el nombre' : null,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9, // ancho dinámico 90%
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6A1B9A),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  offset: Offset(0, 12),
+                  blurRadius: 18,
+                ),
+              ],
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _nombreController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _inputDeco('Nombre'),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Ingrese el nombre' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _direccionController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _inputDeco('Dirección'),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Ingrese la dirección' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _descripcionController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _inputDeco('Descripción'),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Ingrese la descripción' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _precioController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _inputDeco('Precio'),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Ingrese el precio';
+                      if (double.tryParse(value) == null) return 'Precio inválido';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _imagenController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _inputDeco('URL de la imagen'),
+                    onChanged: (_) => setState(() {}),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Ingrese la URL de la imagen' : null,
+                  ),
+                  const SizedBox(height: 10),
+                  _imagenController.text.isNotEmpty
+                      ? Image.network(
+                          _imagenController.text,
+                          height: 200,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Text('No se pudo cargar la imagen', style: TextStyle(color: Colors.white70)),
+                        )
+                      : const Text('Vista previa de la imagen', style: TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _guardarLugar,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.purple,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(esEdicion ? 'Actualizar' : 'Crear'),
+                  ),
+                ],
               ),
-              TextFormField(
-                controller: _direccionController,
-                decoration: const InputDecoration(labelText: 'Dirección'),
-                validator: (value) => value == null || value.isEmpty ? 'Ingrese la dirección' : null,
-              ),
-              TextFormField(
-                controller: _descripcionController,
-                decoration: const InputDecoration(labelText: 'Descripción'),
-                validator: (value) => value == null || value.isEmpty ? 'Ingrese la descripción' : null,
-              ),
-              TextFormField(
-                controller: _precioController,
-                decoration: const InputDecoration(labelText: 'Precio'),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Ingrese el precio';
-                  if (double.tryParse(value) == null) return 'Precio inválido';
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _imagenController,
-                decoration: const InputDecoration(labelText: 'URL de la imagen'),
-                onChanged: (_) => setState(() {}),
-                validator: (value) => value == null || value.isEmpty ? 'Ingrese la URL de la imagen' : null,
-              ),
-              const SizedBox(height: 10),
-              _imagenController.text.isNotEmpty
-                  ? Image.network(
-                      _imagenController.text,
-                      height: 200,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Text('No se pudo cargar la imagen'),
-                    )
-                  : const Text('Vista previa de la imagen'),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _guardarLugar,
-                child: Text(esEdicion ? 'Actualizar' : 'Crear'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
