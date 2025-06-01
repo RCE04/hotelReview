@@ -15,7 +15,8 @@ class _FavoritosPageState extends State<FavoritosPage> {
   List<dynamic> favoritos = [];
   bool cargando = true;
 
-  static const String apiBaseUrl = 'https://localhost:7115/api/Lugares';
+  // URL pública correcta:
+  static const String apiBaseUrl = 'https://hotelreviewapi.onrender.com/api';
 
   @override
   void initState() {
@@ -25,8 +26,11 @@ class _FavoritosPageState extends State<FavoritosPage> {
 
   Future<void> _obtenerFavoritos() async {
     try {
-      final url = Uri.parse('https://localhost:7115/api/Usuarios/${widget.usuarioId}/favoritos');
+      final url = Uri.parse('$apiBaseUrl/Usuarios/${widget.usuarioId}/favoritos');
       final respuesta = await http.get(url);
+
+      print('Status code: ${respuesta.statusCode}');
+      print('Body: ${respuesta.body}');
 
       if (respuesta.statusCode == 200) {
         setState(() {
@@ -61,8 +65,7 @@ class _FavoritosPageState extends State<FavoritosPage> {
                     final lugar = favoritos[index];
                     return GestureDetector(
                       onTap: () {
-                        // Aquí puedes navegar a la página de detalle si la integras
-                        // Navigator.push(context, MaterialPageRoute(builder: (_) => LugarDetallePage(lugar: lugar)));
+                        // Navegar a detalle si quieres
                       },
                       child: Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -79,7 +82,7 @@ class _FavoritosPageState extends State<FavoritosPage> {
                                 topRight: Radius.circular(16),
                               ),
                               child: Image.network(
-                                '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar['imagen'])}',
+                                '$apiBaseUrl/Lugares/imagen-proxy?url=${Uri.encodeComponent(lugar['imagen'])}',
                                 width: double.infinity,
                                 height: 180,
                                 fit: BoxFit.cover,

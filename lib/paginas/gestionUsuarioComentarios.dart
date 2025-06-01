@@ -27,10 +27,15 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
     if (comentariosEliminados) {
       bool usuarioEliminado = await deleteUsuario(id);
       if (usuarioEliminado) {
+        // Traigo las nuevas listas primero (async fuera de setState)
+        final nuevosUsuarios = await fetchUsuarios();
+        final nuevosComentarios = await fetchComentarios();
+
         setState(() {
-          _usuariosFuture = fetchUsuarios();
-          _comentariosFuture = fetchComentarios();
+          _usuariosFuture = Future.value(nuevosUsuarios);
+          _comentariosFuture = Future.value(nuevosComentarios);
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Usuario y comentarios eliminados correctamente')),
         );
@@ -48,7 +53,13 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
 
   void _eliminarComentario(int id) async {
     await deleteComentario(id);
-    setState(() => _comentariosFuture = fetchComentarios());
+    // Traigo los nuevos comentarios antes de setState
+    final nuevosComentarios = await fetchComentarios();
+
+    setState(() {
+      _comentariosFuture = Future.value(nuevosComentarios);
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Comentario eliminado')),
     );

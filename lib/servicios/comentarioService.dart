@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../modelos/comentarios.dart';
 
-// Cambié la URL base para que use la pública de Render
 const String comentariosBaseUrl = 'https://hotelreviewapi.onrender.com/api/Comentarios';
 
 Future<List<Comentario>> fetchComentarios() async {
@@ -18,13 +17,18 @@ Future<List<Comentario>> fetchComentarios() async {
 }
 
 Future<List<Comentario>> fetchComentariosPorLugar(int lugarId) async {
-  final response = await http.get(Uri.parse('$comentariosBaseUrl/lugar/$lugarId'));
+  try {
+    final response = await http.get(Uri.parse('$comentariosBaseUrl/lugar/$lugarId'));
 
-  if (response.statusCode == 200) {
-    List<dynamic> data = jsonDecode(response.body);
-    return data.map((json) => Comentario.fromJson(json)).toList();
-  } else {
-    throw Exception('Error al cargar los comentarios del lugar con ID $lugarId');
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body);
+      if (data.isEmpty) return []; // Retorna lista vacía si no hay comentarios
+      return data.map((json) => Comentario.fromJson(json)).toList();
+    } else {
+      return []; // Retorna lista vacía si status no es 200
+    }
+  } catch (e) {
+    return []; // Retorna lista vacía si hay error (network, parse, etc)
   }
 }
 

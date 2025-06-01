@@ -47,22 +47,17 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
 
     if (confirmacion == true) {
       final comentariosEliminados = await deleteComentariosPorLugar(id);
+      // Intentamos borrar comentarios, pero si no hay, igual borramos el lugar
+      final lugarEliminado = await deleteLugare(id);
 
-      if (comentariosEliminados) {
-        final lugarEliminado = await deleteLugare(id);
-        if (lugarEliminado) {
-          _cargarLugares();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Lugar y sus comentarios eliminados exitosamente.')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error al eliminar el lugar.')),
-          );
-        }
+      if (lugarEliminado) {
+        _cargarLugares();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lugar y sus comentarios eliminados exitosamente.')),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al eliminar los comentarios del lugar.')),
+          const SnackBar(content: Text('Error al eliminar el lugar.')),
         );
       }
     }
@@ -141,12 +136,12 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
           );
         },
       ),
-floatingActionButton: FloatingActionButton(
-  backgroundColor: Colors.white,  // Fondo blanco
-  tooltip: 'Agregar Lugar',
-  child: const Icon(Icons.add, color: Colors.purple), // Icono morado
-  onPressed: () => _abrirFormulario(),
-),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.white,  // Fondo blanco
+        tooltip: 'Agregar Lugar',
+        child: const Icon(Icons.add, color: Colors.purple), // Icono morado
+        onPressed: () => _abrirFormulario(),
+      ),
     );
   }
 }
