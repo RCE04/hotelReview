@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   String _ordenSeleccionado = 'precio';
   UsuarioSesion? usuarioSesion;
 
-  // Nueva base URL de la API en Render
+  //API en Render
   static const String apiBaseUrl = 'https://hotelreviewapi.onrender.com/api/Lugares';
 
   @override

@@ -19,6 +19,9 @@ class LugarDetallePage extends StatefulWidget {
 class _LugarDetallePageState extends State<LugarDetallePage> {
   late Future<List<Comentario>> _comentariosFuture;
   int? _usuarioId;
+  Usuario? _usuario;
+  bool _esFavorito = false;
+
   static const String apiBaseUrl = 'https://hotelreviewapi.onrender.com/api';
 
   @override
@@ -30,24 +33,43 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
 
   Future<void> _cargarSesion() async {
     final id = await SesionService.obtenerUsuarioId();
-    setState(() {
-      _usuarioId = id;
-    });
+    if (id != null) {
+      final usuario = await fetchUsuarioPorId(id);
+      final favoritos = usuario.Favoritos?.split(',').map((e) => int.tryParse(e)).whereType<int>().toList() ?? [];
+
+      setState(() {
+        _usuarioId = id;
+        _usuario = usuario;
+        _esFavorito = favoritos.contains(widget.lugar.Id);
+      });
+    }
   }
 
-  Future<void> _anadirAFavoritos() async {
+  Future<void> _alternarFavorito() async {
     if (_usuarioId == null) return;
 
-    final url = Uri.parse('$apiBaseUrl/Usuarios/$_usuarioId/favorito/${widget.lugar.Id}');
-    final response = await http.post(url);
+    bool exito;
+    if (_esFavorito) {
+      exito = await eliminarFavorito(_usuarioId!, widget.lugar.Id);
+    } else {
+      exito = await agregarFavorito(_usuarioId!, widget.lugar.Id);
+    }
 
-    if (response.statusCode == 200) {
+    if (exito) {
+      setState(() {
+        _esFavorito = !_esFavorito;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lugar añadido a favoritos')),
+        SnackBar(
+          content: Text(_esFavorito
+              ? 'Lugar añadido a favoritos'
+              : 'Lugar eliminado de favoritos'),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al añadir a favoritos')),
+        const SnackBar(content: Text('Error al actualizar favoritos')),
       );
     }
   }
@@ -75,14 +97,45 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
     }
   }
 
+  Widget _datosYBoton(Lugare lugar) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          lugar.NombreLugar,
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        Text('📍 Dirección: ${lugar.Direccion}', style: const TextStyle(fontSize: 18)),
+        const SizedBox(height: 6),
+        Text('📝 Descripción: ${lugar.Descripcion}', style: const TextStyle(fontSize: 18)),
+        const SizedBox(height: 6),
+        Text('💲 Precio por noche: ${lugar.Precio}', style: const TextStyle(fontSize: 18)),
+        const SizedBox(height: 12),
+        if (_usuarioId != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ElevatedButton.icon(
+              onPressed: _alternarFavorito,
+              icon: Icon(_esFavorito ? Icons.favorite : Icons.favorite_border),
+              label: Text(_esFavorito ? 'Eliminar de Favoritos' : 'Añadir a Favoritos'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                textStyle: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lugar = widget.lugar;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(''),
-      ),
+      appBar: AppBar(title: const Text('')),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -94,65 +147,59 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Imagen del hotel (más grande)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          '$apiBaseUrl/Lugares/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
-                          width: 200,
-                          height: 200,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 200,
-                            height: 200,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.broken_image, size: 60),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      // Datos del hotel
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              lugar.NombreLugar,
-                              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 12),
-                            Text('📍 Dirección: ${lugar.Direccion}', style: const TextStyle(fontSize: 18)),
-                            const SizedBox(height: 6),
-                            Text('📝 Descripción: ${lugar.Descripcion}', style: const TextStyle(fontSize: 18)),
-                            const SizedBox(height: 6),
-                            Text('💲 Precio por noche: ${lugar.Precio}', style: const TextStyle(fontSize: 18)),
-                            const SizedBox(height: 12),
-                            if (_usuarioId != null)
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: ElevatedButton.icon(
-                                  onPressed: _anadirAFavoritos,
-                                  icon: const Icon(Icons.favorite_border),
-                                  label: const Text('Añadir a Favoritos'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.redAccent,
-                                    foregroundColor: Colors.white,
-                                    textStyle: const TextStyle(fontSize: 16),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      bool esAnchoPequeno = constraints.maxWidth < 600;
+                      return esAnchoPequeno
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    '$apiBaseUrl/Lugares/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
+                                    width: 200,
+                                    height: 200,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      width: 200,
+                                      height: 200,
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.broken_image, size: 60),
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
+                                const SizedBox(height: 24),
+                                _datosYBoton(lugar),
+                              ],
+                            )
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    '$apiBaseUrl/Lugares/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
+                                    width: 200,
+                                    height: 200,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      width: 200,
+                                      height: 200,
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.broken_image, size: 60),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 24),
+                                Expanded(child: _datosYBoton(lugar)),
+                              ],
+                            );
+                    },
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -191,7 +238,6 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                 },
               ),
             ),
-
             const Divider(height: 32),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -199,7 +245,6 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
-
             FutureBuilder<List<Comentario>>(
               future: _comentariosFuture,
               builder: (context, snapshot) {

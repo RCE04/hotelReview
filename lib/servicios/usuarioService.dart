@@ -95,3 +95,11 @@ Future<bool> agregarFavorito(int usuarioId, int lugarId) async {
 
   return response.statusCode == 200 || response.statusCode == 204;
 }
+
+Future<bool> eliminarFavorito(int usuarioId, int lugarId) async {
+  final url = Uri.parse('$usuariosBaseUrl/$usuarioId/favorito/$lugarId');
+  
+  final response = await http.delete(url);
+
+  return response.statusCode == 200 || response.statusCode == 204;
+}
