@@ -1,11 +1,11 @@
 class Usuario {
-  final int? Id;
-  final String NombreUsuario;
-  final String Contrasena;
-  final String Rol;
-  final String? Favoritos;
+  int? Id;
+  String NombreUsuario;
+  String Contrasena;
+  String Rol;
+  String? Favoritos;
 
-  const Usuario({
+  Usuario({
     this.Id,
     required this.NombreUsuario,
     required this.Contrasena,
@@ -17,7 +17,7 @@ class Usuario {
     return Usuario(
       Id: json['id'],
       NombreUsuario: json['nombreUsuario'],
-      Contrasena: json['contraseña'], // <- Ñ en el JSON
+      Contrasena: json['contraseña'],
       Rol: json['rol'],
       Favoritos: json['favoritos'],
     );
@@ -25,8 +25,7 @@ class Usuario {
 
   Map<String, dynamic> toJson() {
     return {
-      // Aquí es donde tienes que añadir la línea 'id': Id,
-      'id': Id,  // <- Agregado para que el backend reciba el id y no dé error 400
+      'id': Id,
       'nombreUsuario': NombreUsuario,
       'contraseña': Contrasena,
       'rol': Rol,

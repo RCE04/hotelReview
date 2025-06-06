@@ -14,6 +14,7 @@ class GestionUsuariosComentariosPage extends StatefulWidget {
 class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentariosPage> {
   late Future<List<Usuario>> _usuariosFuture;
   late Future<List<Comentario>> _comentariosFuture;
+  final Map<int, String> _rolesEditados = {};
 
   @override
   void initState() {
@@ -27,7 +28,6 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
     if (comentariosEliminados) {
       bool usuarioEliminado = await deleteUsuario(id);
       if (usuarioEliminado) {
-        // Traigo las nuevas listas primero (async fuera de setState)
         final nuevosUsuarios = await fetchUsuarios();
         final nuevosComentarios = await fetchComentarios();
 
@@ -51,9 +51,36 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
     }
   }
 
+  void _guardarRol(Usuario usuario) async {
+    final nuevoRol = _rolesEditados[usuario.Id];
+    if (nuevoRol != null && nuevoRol != usuario.Rol) {
+      final actualizado = Usuario(
+        Id: usuario.Id,
+        NombreUsuario: usuario.NombreUsuario,
+        Contrasena: usuario.Contrasena,
+        Rol: nuevoRol,
+        Favoritos: usuario.Favoritos,
+      );
+
+      bool ok = await updateUsuario(actualizado);
+      if (ok) {
+        final nuevosUsuarios = await fetchUsuarios();
+        setState(() {
+          _usuariosFuture = Future.value(nuevosUsuarios);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Rol actualizado')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al actualizar el rol')),
+        );
+      }
+    }
+  }
+
   void _eliminarComentario(int id) async {
     await deleteComentario(id);
-    // Traigo los nuevos comentarios antes de setState
     final nuevosComentarios = await fetchComentarios();
 
     setState(() {
@@ -93,15 +120,56 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
 
                 return Column(
                   children: snapshot.data!.map((usuario) {
+                    final rolActual = _rolesEditados[usuario.Id] ?? usuario.Rol;
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 6),
-                      child: ListTile(
-                        leading: const Icon(Icons.person, color: Colors.deepPurple),
-                        title: Text(usuario.NombreUsuario),
-                        subtitle: Text('Rol: ${usuario.Rol}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _eliminarUsuario(usuario.Id!),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.person, color: Colors.deepPurple),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(usuario.NombreUsuario, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                  const Text('Rol:'),
+                                  DropdownButton<String>(
+                                    value: ['Administrador', 'Usuario'].contains(rolActual) ? rolActual : null,
+                                    onChanged: (nuevoRol) {
+                                      setState(() {
+                                        _rolesEditados[usuario.Id!] = nuevoRol!;
+                                      });
+                                    },
+                                    items: ['Administrador', 'Usuario']
+                                        .map((rol) => DropdownMenuItem<String>(
+                                              value: rol,
+                                              child: Text(rol),
+                                            ))
+                                        .toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.save, color: Colors.green),
+                                  tooltip: 'Guardar rol',
+                                  onPressed: () => _guardarRol(usuario),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  tooltip: 'Eliminar usuario',
+                                  onPressed: () => _eliminarUsuario(usuario.Id!),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     );
