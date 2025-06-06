@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../modelos/usuarios.dart';
 import '../servicios/usuarioService.dart';
-import 'inicioSesion.dart';  // Asegúrate que esta ruta es correcta
+import 'inicioSesion.dart';  // Asegúrate de que esta ruta es correcta
 
 class FormularioCrearUsuario extends StatefulWidget {
   const FormularioCrearUsuario({super.key});
@@ -14,9 +14,7 @@ class _FormularioCrearUsuarioState extends State<FormularioCrearUsuario> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _contrasenaController = TextEditingController();
-  String _rolSeleccionado = 'Usuario';
 
-  final List<String> _roles = ['Usuario', 'Administrador'];
   bool _enviando = false;
   String? _mensaje;
 
@@ -32,7 +30,7 @@ class _FormularioCrearUsuarioState extends State<FormularioCrearUsuario> {
       Id: 0,
       NombreUsuario: _nombreController.text.trim(),
       Contrasena: _contrasenaController.text,
-      Rol: _rolSeleccionado,
+      Rol: 'Usuario', // Rol fijo
     );
 
     bool exito = await createUsuario(nuevoUsuario);
@@ -92,20 +90,6 @@ class _FormularioCrearUsuarioState extends State<FormularioCrearUsuario> {
                     obscureText: true,
                     validator: (v) =>
                         (v == null || v.length < 4) ? 'Contraseña muy corta' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: _rolSeleccionado,
-                    dropdownColor: const Color(0xFF6A1B9A),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDeco('Rol'),
-                    items: _roles
-                        .map((rol) => DropdownMenuItem(
-                              value: rol,
-                              child: Text(rol),
-                            ))
-                        .toList(),
-                    onChanged: (v) => setState(() => _rolSeleccionado = v ?? _rolSeleccionado),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
