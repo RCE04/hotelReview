@@ -331,7 +331,7 @@ class _HomePageState extends State<HomePage> {
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (usuarioSesion!.rol == 'administrador') ...[
+                if (usuarioSesion!.rol == 'administrador' ||usuarioSesion!.rol =='Administrador') ...[
                   FloatingActionButton.extended(
                     heroTag: 'usuarios',
                     onPressed: _irAGestionUsuariosComentarios,

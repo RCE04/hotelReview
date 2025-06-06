@@ -61,13 +61,23 @@ Future<bool> deleteComentario(int id) async {
   return response.statusCode == 204;
 }
 
+/// *** Función corregida para evitar fallo si no hay comentarios ***
 Future<bool> eliminarComentariosPorUsuario(int usuarioId) async {
-  final response = await http.delete(
-    Uri.parse('$comentariosBaseUrl/usuario/$usuarioId'),
-    headers: {'Content-Type': 'application/json; charset=UTF-8'},
-  );
+  try {
+    final response = await http.delete(
+      Uri.parse('$comentariosBaseUrl/usuario/$usuarioId'),
+      headers: {'Content-Type': 'application/json; charset=UTF-8'},
+    );
 
-  return response.statusCode == 204;
+    // Éxito si eliminó o no había comentarios (204 o 404)
+    if (response.statusCode == 204 || response.statusCode == 404) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
 }
 
 Future<bool> deleteComentariosPorLugar(int lugarId) async {

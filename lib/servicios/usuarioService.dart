@@ -103,3 +103,18 @@ Future<bool> eliminarFavorito(int usuarioId, int lugarId) async {
 
   return response.statusCode == 200 || response.statusCode == 204;
 }
+
+/// Obtiene la lista de IDs de lugares favoritos de un usuario
+Future<List<int>> obtenerIdsFavoritos(int usuarioId) async {
+  final url = Uri.parse('$usuariosBaseUrl/$usuarioId/favoritos');
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = jsonDecode(response.body);
+
+    // Asegurarse de que todos los objetos tengan un campo 'id'
+    return data.map<int>((lugar) => lugar['id'] as int).toList();
+  } else {
+    throw Exception('Error al obtener favoritos del usuario');
+  }
+}

@@ -25,8 +25,10 @@ class Usuario {
 
   Map<String, dynamic> toJson() {
     return {
+      // Aquí es donde tienes que añadir la línea 'id': Id,
+      'id': Id,  // <- Agregado para que el backend reciba el id y no dé error 400
       'nombreUsuario': NombreUsuario,
-      'contraseña': Contrasena, // <- Ñ en el JSON
+      'contraseña': Contrasena,
       'rol': Rol,
       'favoritos': Favoritos,
     };
