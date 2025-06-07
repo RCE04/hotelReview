@@ -13,6 +13,7 @@ class GestionLugaresPage extends StatefulWidget {
 
 class _GestionLugaresPageState extends State<GestionLugaresPage> {
   late Future<List<Lugare>> _lugaresFuture;
+  bool _huboCambios = false;
 
   @override
   void initState() {
@@ -46,14 +47,14 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
     );
 
     if (confirmacion == true) {
-      final comentariosEliminados = await deleteComentariosPorLugar(id);
-      // Intentamos borrar comentarios, pero si no hay, igual borramos el lugar
+      await deleteComentariosPorLugar(id);
       final lugarEliminado = await deleteLugare(id);
 
       if (lugarEliminado) {
+        _huboCambios = true;
         _cargarLugares();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lugar y sus comentarios eliminados exitosamente.')),
+          const SnackBar(content: Text('Lugar y comentarios eliminados.')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -69,8 +70,15 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
       MaterialPageRoute(builder: (_) => EditarLugarPage(lugar: lugar)),
     );
     if (resultado == true) {
+      _huboCambios = true;
       _cargarLugares();
     }
+  }
+
+  @override
+  void dispose() {
+    Navigator.pop(context, _huboCambios); // <- Devuelve true si hubo cambios
+    super.dispose();
   }
 
   @override
@@ -137,9 +145,9 @@ class _GestionLugaresPageState extends State<GestionLugaresPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,  // Fondo blanco
+        backgroundColor: Colors.white,
         tooltip: 'Agregar Lugar',
-        child: const Icon(Icons.add, color: Colors.purple), // Icono morado
+        child: const Icon(Icons.add, color: Colors.purple),
         onPressed: () => _abrirFormulario(),
       ),
     );

@@ -24,10 +24,8 @@ class _HomePageState extends State<HomePage> {
 
   String _filtroNombre = '';
   String _filtroDireccion = '';
-  String _ordenSeleccionado = 'precio';
   UsuarioSesion? usuarioSesion;
 
-  //API en Render
   static const String apiBaseUrl = 'https://hotelreviewapi.onrender.com/api/Lugares';
 
   @override
@@ -42,7 +40,7 @@ class _HomePageState extends State<HomePage> {
       _lugaresFuture = fetchLugares();
       _lugaresFuture.then((lugares) {
         _lugaresOriginales = lugares;
-        _aplicarFiltrosYOrden();
+        _aplicarFiltros();
       });
     });
   }
@@ -79,11 +77,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _irAGestionLugares() {
-    Navigator.push(
+  void _irAGestionLugares() async {
+    final resultado = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const GestionLugaresPage()),
     );
+    if (resultado == true) {
+      _cargarLugares();
+    }
   }
 
   void _irAEditarLugar({Lugare? lugar}) async {
@@ -97,17 +98,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _aplicarFiltrosYOrden() {
+  void _aplicarFiltros() {
     List<Lugare> lista = _lugaresOriginales.where((lugar) {
       final nombreMatch = lugar.NombreLugar.toLowerCase().contains(_filtroNombre.toLowerCase());
       final direccionMatch = lugar.Direccion.toLowerCase().contains(_filtroDireccion.toLowerCase());
       return nombreMatch && direccionMatch;
     }).toList();
-
-    if (_ordenSeleccionado == 'precio') {
-      lista.sort((a, b) =>
-          double.tryParse(a.Precio)!.compareTo(double.tryParse(b.Precio)!));
-    }
 
     setState(() {
       _lugaresFiltrados = lista;
@@ -176,7 +172,7 @@ class _HomePageState extends State<HomePage> {
                           onChanged: (value) {
                             setState(() {
                               _filtroNombre = value;
-                              _aplicarFiltrosYOrden();
+                              _aplicarFiltros();
                             });
                           },
                         ),
@@ -190,7 +186,7 @@ class _HomePageState extends State<HomePage> {
                           onChanged: (value) {
                             setState(() {
                               _filtroDireccion = value;
-                              _aplicarFiltrosYOrden();
+                              _aplicarFiltros();
                             });
                           },
                         ),
@@ -198,31 +194,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ],
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  children: [
-                    const Text('Ordenar por: '),
-                    const SizedBox(width: 10),
-                    DropdownButton<String>(
-                      value: _ordenSeleccionado,
-                      underline: const SizedBox(),
-                      style: const TextStyle(color: Colors.black, fontSize: 16),
-                      items: const [
-                        DropdownMenuItem(value: 'precio', child: Text('Precio')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _ordenSeleccionado = value;
-                            _aplicarFiltrosYOrden();
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
               ),
               Expanded(
                 child: ListView.builder(
@@ -254,7 +225,6 @@ class _HomePageState extends State<HomePage> {
                                 topRight: Radius.circular(16),
                               ),
                               child: Image.network(
-                                // ✅ Imagen con proxy
                                 '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
                                 width: double.infinity,
                                 height: 180,
@@ -271,18 +241,12 @@ class _HomePageState extends State<HomePage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          lugar.NombreLugar,
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    lugar.NombreLugar,
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Row(
@@ -331,7 +295,7 @@ class _HomePageState extends State<HomePage> {
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (usuarioSesion!.rol == 'administrador' ||usuarioSesion!.rol =='Administrador') ...[
+                if (usuarioSesion!.rol.toLowerCase() == 'administrador') ...[
                   FloatingActionButton.extended(
                     heroTag: 'usuarios',
                     onPressed: _irAGestionUsuariosComentarios,
