@@ -24,6 +24,7 @@ class _HomePageState extends State<HomePage> {
 
   String _filtroNombre = '';
   String _filtroDireccion = '';
+  String _ordenSeleccionado = 'precio';
   UsuarioSesion? usuarioSesion;
 
   static const String apiBaseUrl = 'https://hotelreviewapi.onrender.com/api/Lugares';
@@ -40,7 +41,7 @@ class _HomePageState extends State<HomePage> {
       _lugaresFuture = fetchLugares();
       _lugaresFuture.then((lugares) {
         _lugaresOriginales = lugares;
-        _aplicarFiltros();
+        _aplicarFiltrosYOrden();
       });
     });
   }
@@ -77,14 +78,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _irAGestionLugares() async {
-    final resultado = await Navigator.push(
+  void _irAGestionLugares() {
+    Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const GestionLugaresPage()),
     );
-    if (resultado == true) {
-      _cargarLugares();
-    }
   }
 
   void _irAEditarLugar({Lugare? lugar}) async {
@@ -98,12 +96,17 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _aplicarFiltros() {
+  void _aplicarFiltrosYOrden() {
     List<Lugare> lista = _lugaresOriginales.where((lugar) {
       final nombreMatch = lugar.NombreLugar.toLowerCase().contains(_filtroNombre.toLowerCase());
       final direccionMatch = lugar.Direccion.toLowerCase().contains(_filtroDireccion.toLowerCase());
       return nombreMatch && direccionMatch;
     }).toList();
+
+    if (_ordenSeleccionado == 'precio') {
+      lista.sort((a, b) =>
+          double.tryParse(a.Precio)!.compareTo(double.tryParse(b.Precio)!));
+    }
 
     setState(() {
       _lugaresFiltrados = lista;
@@ -114,7 +117,16 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HotelReview'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/iconos/icono1.png',
+              height: 32,
+            ),
+            const SizedBox(width: 10),
+            const Text('HotelReview'),
+          ],
+        ),
         actions: [
           if (usuarioSesion != null) ...[
             IconButton(
@@ -172,7 +184,7 @@ class _HomePageState extends State<HomePage> {
                           onChanged: (value) {
                             setState(() {
                               _filtroNombre = value;
-                              _aplicarFiltros();
+                              _aplicarFiltrosYOrden();
                             });
                           },
                         ),
@@ -186,7 +198,7 @@ class _HomePageState extends State<HomePage> {
                           onChanged: (value) {
                             setState(() {
                               _filtroDireccion = value;
-                              _aplicarFiltros();
+                              _aplicarFiltrosYOrden();
                             });
                           },
                         ),
@@ -194,6 +206,31 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  children: [
+                    const Text('Ordenar por: '),
+                    const SizedBox(width: 10),
+                    DropdownButton<String>(
+                      value: _ordenSeleccionado,
+                      underline: const SizedBox(),
+                      style: const TextStyle(color: Colors.black, fontSize: 16),
+                      items: const [
+                        DropdownMenuItem(value: 'precio', child: Text('Precio')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _ordenSeleccionado = value;
+                            _aplicarFiltrosYOrden();
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
               Expanded(
                 child: ListView.builder(
@@ -295,7 +332,7 @@ class _HomePageState extends State<HomePage> {
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (usuarioSesion!.rol.toLowerCase() == 'administrador') ...[
+                if (usuarioSesion!.rol == 'administrador' || usuarioSesion!.rol == 'Administrador') ...[
                   FloatingActionButton.extended(
                     heroTag: 'usuarios',
                     onPressed: _irAGestionUsuariosComentarios,
