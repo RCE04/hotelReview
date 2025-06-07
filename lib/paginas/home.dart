@@ -306,8 +306,8 @@ class _HomePageState extends State<HomePage> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const Divider(height: 20),
-                                  Text(
-                                    'Precio por noche: ${double.tryParse(lugar.Precio)} €',
+                                    Text(
+                                    'Precio por noche: ${double.tryParse(lugar.Precio)?.toInt()} €',
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
