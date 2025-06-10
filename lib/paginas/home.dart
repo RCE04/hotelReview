@@ -65,7 +65,6 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (_) => const InicioSesionPage()),
     );
-
     if (resultado == true) {
       _cargarSesion();
     }
@@ -90,7 +89,6 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (_) => EditarLugarPage(lugar: lugar)),
     );
-
     if (resultado == true) {
       _cargarLugares();
     }
@@ -119,10 +117,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset(
-              'assets/iconos/icono1.png',
-              height: 32,
-            ),
+            Image.asset('assets/iconos/icono1.png', height: 32),
             const SizedBox(width: 10),
             const Text('HotelReview'),
           ],
@@ -233,93 +228,102 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: _lugaresFiltrados.length,
-                  itemBuilder: (context, index) {
-                    final lugar = _lugaresFiltrados[index];
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    int crossAxisCount = constraints.maxWidth < 600
+                        ? 1
+                        : constraints.maxWidth < 1000
+                            ? 2
+                            : 3;
 
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LugarDetallePage(lugar: lugar),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        elevation: 6,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(12),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 3 / 2,
+                      ),
+                      itemCount: _lugaresFiltrados.length,
+                      itemBuilder: (context, index) {
+                        final lugar = _lugaresFiltrados[index];
+
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LugarDetallePage(lugar: lugar),
                               ),
-                              child: Image.network(
-                                '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
-                                width: double.infinity,
-                                height: 180,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  height: 180,
-                                  color: Colors.grey[300],
-                                  child: const Icon(Icons.broken_image, size: 60),
-                                ),
-                              ),
+                            );
+                          },
+                          child: Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    lugar.NombreLugar,
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                    child: FadeInImage.assetNetwork(
+                                      placeholder: 'assets/placeholder.jpg',
+                                      image: '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      imageErrorBuilder: (context, error, stackTrace) => Container(
+                                        color: Colors.grey[200],
+                                        child: const Center(child: Icon(Icons.broken_image, size: 60)),
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Row(
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          lugar.Direccion,
-                                          style: const TextStyle(color: Colors.grey),
+                                      Text(
+                                        lugar.NombreLugar,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              lugar.Direccion,
+                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Desde ${double.tryParse(lugar.Precio)?.toInt()} €/noche',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.green,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    lugar.Descripcion,
-                                    style: const TextStyle(fontSize: 14),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const Divider(height: 20),
-                                    Text(
-                                    'Precio por noche: ${double.tryParse(lugar.Precio)?.toInt()} €',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.green,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -332,7 +336,7 @@ class _HomePageState extends State<HomePage> {
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (usuarioSesion!.rol == 'administrador' || usuarioSesion!.rol == 'Administrador') ...[
+                if (usuarioSesion!.rol.toLowerCase() == 'administrador') ...[
                   FloatingActionButton.extended(
                     heroTag: 'usuarios',
                     onPressed: _irAGestionUsuariosComentarios,
