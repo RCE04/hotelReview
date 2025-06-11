@@ -9,6 +9,7 @@ import '../servicios/sesionService.dart';
 import '../modelos/usuarioSesion.dart';
 import '../paginas/editarLugares.dart';
 import '../paginas/favoritos.dart';
+import '../servicios/usuarioService.dart';  // <- Importa el servicio de usuarios
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,8 +25,8 @@ class _HomePageState extends State<HomePage> {
 
   String _filtroNombre = '';
   String _filtroDireccion = '';
-  String _ordenSeleccionado = 'precio';
   UsuarioSesion? usuarioSesion;
+  Set<int> _idsFavoritos = {};
 
   static const String apiBaseUrl = 'https://hotelreviewapi.onrender.com/api/Lugares';
 
@@ -41,22 +42,39 @@ class _HomePageState extends State<HomePage> {
       _lugaresFuture = fetchLugares();
       _lugaresFuture.then((lugares) {
         _lugaresOriginales = lugares;
-        _aplicarFiltrosYOrden();
+        _aplicarFiltros();
       });
     });
   }
 
   void _cargarSesion() async {
     UsuarioSesion? sesion = await SesionService.obtenerUsuarioSesion();
-    setState(() {
-      usuarioSesion = sesion;
-    });
+    if (sesion != null) {
+      try {
+        final favoritosIds = await obtenerIdsFavoritos(sesion.id);
+        setState(() {
+          usuarioSesion = sesion;
+          _idsFavoritos = favoritosIds.toSet();
+        });
+      } catch (e) {
+        setState(() {
+          usuarioSesion = sesion;
+          _idsFavoritos = {};
+        });
+      }
+    } else {
+      setState(() {
+        usuarioSesion = null;
+        _idsFavoritos.clear();
+      });
+    }
   }
 
   void _cerrarSesion() async {
     await SesionService.cerrarSesion();
     setState(() {
       usuarioSesion = null;
+      _idsFavoritos.clear();
     });
   }
 
@@ -94,21 +112,46 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _aplicarFiltrosYOrden() {
-    List<Lugare> lista = _lugaresOriginales.where((lugar) {
-      final nombreMatch = lugar.NombreLugar.toLowerCase().contains(_filtroNombre.toLowerCase());
-      final direccionMatch = lugar.Direccion.toLowerCase().contains(_filtroDireccion.toLowerCase());
-      return nombreMatch && direccionMatch;
+  void _aplicarFiltros() {
+    List<Lugare> lista = _lugaresOriginales.where((l) {
+      final n = l.NombreLugar.toLowerCase().contains(_filtroNombre.toLowerCase());
+      final d = l.Direccion.toLowerCase().contains(_filtroDireccion.toLowerCase());
+      return n && d;
     }).toList();
+    setState(() => _lugaresFiltrados = lista);
+  }
 
-    if (_ordenSeleccionado == 'precio') {
-      lista.sort((a, b) =>
-          double.tryParse(a.Precio)!.compareTo(double.tryParse(b.Precio)!));
+  Future<void> _toggleFavorito(int lugarId) async {
+    if (usuarioSesion == null) return;
+
+    final esFav = _idsFavoritos.contains(lugarId);
+    bool exito = false;
+
+    if (esFav) {
+      exito = await eliminarFavorito(usuarioSesion!.id, lugarId);
+    } else {
+      exito = await agregarFavorito(usuarioSesion!.id, lugarId);
     }
 
-    setState(() {
-      _lugaresFiltrados = lista;
-    });
+    if (exito) {
+      setState(() {
+        if (esFav) {
+          _idsFavoritos.remove(lugarId);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Eliminado de favoritos')),
+          );
+        } else {
+          _idsFavoritos.add(lugarId);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Agregado a favoritos')),
+          );
+        }
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al ${esFav ? 'eliminar' : 'agregar'} favorito')),
+      );
+    }
   }
 
   @override
@@ -133,7 +176,7 @@ class _HomePageState extends State<HomePage> {
                   MaterialPageRoute(
                     builder: (_) => FavoritosPage(usuarioId: usuarioSesion!.id),
                   ),
-                );
+                ).then((_) => _cargarSesion());
               },
             ),
             IconButton(
@@ -152,12 +195,12 @@ class _HomePageState extends State<HomePage> {
       ),
       body: FutureBuilder<List<Lugare>>(
         future: _lugaresFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (ctx, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          } else if (snap.hasError) {
+            return Center(child: Text('Error: ${snap.error}'));
+          } else if (!snap.hasData || snap.data!.isEmpty) {
             return const Center(child: Text('No hay lugares disponibles.'));
           }
 
@@ -176,11 +219,9 @@ class _HomePageState extends State<HomePage> {
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.search),
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              _filtroNombre = value;
-                              _aplicarFiltrosYOrden();
-                            });
+                          onChanged: (v) {
+                            _filtroNombre = v;
+                            _aplicarFiltros();
                           },
                         ),
                         const SizedBox(height: 10),
@@ -190,11 +231,9 @@ class _HomePageState extends State<HomePage> {
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.search),
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              _filtroDireccion = value;
-                              _aplicarFiltrosYOrden();
-                            });
+                          onChanged: (v) {
+                            _filtroDireccion = v;
+                            _aplicarFiltros();
                           },
                         ),
                       ],
@@ -202,120 +241,115 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  children: [
-                    const Text('Ordenar por: '),
-                    const SizedBox(width: 10),
-                    DropdownButton<String>(
-                      value: _ordenSeleccionado,
-                      underline: const SizedBox(),
-                      style: const TextStyle(color: Colors.black, fontSize: 16),
-                      items: const [
-                        DropdownMenuItem(value: 'precio', child: Text('Precio')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _ordenSeleccionado = value;
-                            _aplicarFiltrosYOrden();
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
               Expanded(
                 child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    int crossAxisCount = constraints.maxWidth < 600
+                  builder: (ctx, cons) {
+                    final columns = cons.maxWidth < 600
                         ? 1
-                        : constraints.maxWidth < 1000
+                        : cons.maxWidth < 1000
                             ? 2
                             : 3;
-
                     return GridView.builder(
                       padding: const EdgeInsets.all(12),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
+                        crossAxisCount: columns,
                         mainAxisSpacing: 12,
                         crossAxisSpacing: 12,
                         childAspectRatio: 3 / 2,
                       ),
                       itemCount: _lugaresFiltrados.length,
-                      itemBuilder: (context, index) {
-                        final lugar = _lugaresFiltrados[index];
-
+                      itemBuilder: (_, i) {
+                        final lug = _lugaresFiltrados[i];
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => LugarDetallePage(lugar: lugar),
-                              ),
-                            );
-                          },
+                                  builder: (_) =>
+                                      LugarDetallePage(lugar: lug))),
                           child: Card(
                             elevation: 4,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                                borderRadius: BorderRadius.circular(20)),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
                                   child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(20)),
                                     child: FadeInImage.assetNetwork(
                                       placeholder: 'assets/placeholder.jpg',
-                                      image: '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lugar.Imagen)}',
-                                      fit: BoxFit.cover,
+                                      image:
+                                          '$apiBaseUrl/imagen-proxy?url=${Uri.encodeComponent(lug.Imagen)}',
                                       width: double.infinity,
-                                      imageErrorBuilder: (context, error, stackTrace) => Container(
-                                        color: Colors.grey[200],
-                                        child: const Center(child: Icon(Icons.broken_image, size: 60)),
-                                      ),
+                                      fit: BoxFit.cover,
+                                      imageErrorBuilder: (_, __, ___) =>
+                                          Container(
+                                              color: Colors.grey[200],
+                                              child: const Center(
+                                                  child: Icon(
+                                                      Icons.broken_image,
+                                                      size: 60))),
                                     ),
                                   ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(12),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        lugar.NombreLugar,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(lug.NombreLugar,
+                                                style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ),
+                                          if (usuarioSesion != null)
+                                            IconButton(
+                                              icon: Icon(
+                                                _idsFavoritos.contains(lug.Id)
+                                                    ? Icons.favorite
+                                                    : Icons.favorite_border,
+                                                color: Colors.red,
+                                              ),
+                                              tooltip: _idsFavoritos
+                                                      .contains(lug.Id)
+                                                  ? 'Eliminar de favoritos'
+                                                  : 'Agregar a favoritos',
+                                              onPressed: () =>
+                                                  _toggleFavorito(lug.Id),
+                                            ),
+                                        ],
                                       ),
                                       const SizedBox(height: 4),
                                       Row(
                                         children: [
-                                          const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                          const Icon(Icons.location_on,
+                                              size: 14, color: Colors.grey),
                                           const SizedBox(width: 4),
                                           Expanded(
-                                            child: Text(
-                                              lugar.Direccion,
-                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
+                                              child: Text(lug.Direccion,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 12),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis)),
                                         ],
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Desde ${double.tryParse(lugar.Precio)?.toInt()} €/noche',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.green,
-                                        ),
-                                      ),
+                                          '${double.tryParse(lug.Precio)?.toInt()} €/noche',
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.green)),
                                     ],
                                   ),
                                 ),

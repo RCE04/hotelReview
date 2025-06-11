@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../paginas/lugarDetalle.dart';
-import '../modelos/lugares.dart'; // Asegúrate de que Lugare está aquí
+import '../modelos/lugares.dart';
 
 class FavoritosPage extends StatefulWidget {
   final int usuarioId;
@@ -70,20 +70,31 @@ class _FavoritosPageState extends State<FavoritosPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Favoritos'),
-        backgroundColor: Colors.redAccent,
       ),
       body: cargando
           ? const Center(child: CircularProgressIndicator())
           : favoritos.isEmpty
               ? const Center(child: Text('No tienes lugares favoritos aún.'))
-              : ListView.builder(
-                  itemCount: favoritos.length,
-                  itemBuilder: (context, index) {
-                    final lugar = favoritos[index];
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    int crossAxisCount = constraints.maxWidth < 600
+                        ? 1
+                        : constraints.maxWidth < 1000
+                            ? 2
+                            : 3;
 
-                    return GestureDetector(
-                      onTap: () {
-                        // Convertimos el mapa a un objeto Lugare
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: favoritos.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 3 / 2,
+                      ),
+                      itemBuilder: (context, index) {
+                        final lugar = favoritos[index];
+
                         final lugareObj = Lugare(
                           Id: lugar['id'],
                           NombreLugar: lugar['nombreLugar'] ?? '',
@@ -93,97 +104,97 @@ class _FavoritosPageState extends State<FavoritosPage> {
                           Precio: lugar['precio'] ?? '0.00',
                         );
 
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LugarDetallePage(lugar: lugareObj),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LugarDetallePage(lugar: lugareObj),
                               ),
-                              child: Image.network(
-                                '$apiBaseUrl/Lugares/imagen-proxy?url=${Uri.encodeComponent(lugar['imagen'] ?? '')}',
-                                width: double.infinity,
-                                height: 180,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  height: 180,
-                                  color: Colors.grey[300],
-                                  child: const Icon(Icons.broken_image, size: 60),
-                                ),
-                              ),
+                            );
+                          },
+                          child: Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Stack(
                                     children: [
-                                      Expanded(
-                                        child: Text(
-                                          lugar['nombreLugar'] ?? 'Sin nombre',
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
+                                      ClipRRect(
+                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                                        child: FadeInImage.assetNetwork(
+                                          placeholder: 'assets/placeholder.jpg',
+                                          image: '$apiBaseUrl/Lugares/imagen-proxy?url=${Uri.encodeComponent(lugar['imagen'] ?? '')}',
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          imageErrorBuilder: (context, error, stackTrace) => Container(
+                                            color: Colors.grey[200],
+                                            child: const Center(child: Icon(Icons.broken_image, size: 60)),
                                           ),
                                         ),
                                       ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete, color: Colors.red),
-                                        onPressed: () => _eliminarFavorito(lugar['id']),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          lugar['direccion'] ?? 'Sin dirección',
-                                          style: const TextStyle(color: Colors.grey),
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: CircleAvatar(
+                                          backgroundColor: Colors.white.withOpacity(0.8),
+                                          child: IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.red),
+                                            onPressed: () => _eliminarFavorito(lugar['id']),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    lugar['descripcion'] ?? 'Sin descripción',
-                                    style: const TextStyle(fontSize: 14),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        lugar['nombreLugar'] ?? 'Sin nombre',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              lugar['direccion'] ?? 'Sin dirección',
+                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Desde ${double.tryParse(lugar['precio'] ?? '0.00')?.toInt()} €/noche',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Precio por noche: €${lugar['precio'] ?? '0.00'}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.green,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
