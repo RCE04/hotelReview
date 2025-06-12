@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../modelos/usuarios.dart';
 import '../modelos/comentarios.dart';
+import '../modelos/lugares.dart';
 import '../servicios/usuarioService.dart';
 import '../servicios/comentarioService.dart';
+import '../servicios/lugarService.dart';
 
 class GestionUsuariosComentariosPage extends StatefulWidget {
   const GestionUsuariosComentariosPage({super.key});
@@ -14,6 +16,7 @@ class GestionUsuariosComentariosPage extends StatefulWidget {
 class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentariosPage> {
   late Future<List<Usuario>> _usuariosFuture;
   late Future<List<Comentario>> _comentariosFuture;
+  late Future<List<Lugare>> _lugaresFuture;
   final Map<int, String> _rolesEditados = {};
 
   @override
@@ -21,6 +24,7 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
     super.initState();
     _usuariosFuture = fetchUsuarios();
     _comentariosFuture = fetchComentarios();
+    _lugaresFuture = fetchLugares();
   }
 
   void _eliminarUsuario(int id) async {
@@ -30,12 +34,10 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
       if (usuarioEliminado) {
         final nuevosUsuarios = await fetchUsuarios();
         final nuevosComentarios = await fetchComentarios();
-
         setState(() {
           _usuariosFuture = Future.value(nuevosUsuarios);
           _comentariosFuture = Future.value(nuevosComentarios);
         });
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Usuario y comentarios eliminados correctamente')),
         );
@@ -82,11 +84,9 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
   void _eliminarComentario(int id) async {
     await deleteComentario(id);
     final nuevosComentarios = await fetchComentarios();
-
     setState(() {
       _comentariosFuture = Future.value(nuevosComentarios);
     });
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Comentario eliminado')),
     );
@@ -194,23 +194,79 @@ class _GestionUsuariosComentariosPageState extends State<GestionUsuariosComentar
                   return const Text('No hay comentarios disponibles.');
                 }
 
-                return Column(
-                  children: snapshot.data!.map((comentario) {
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      child: ListTile(
-                        leading: const Icon(Icons.comment, color: Colors.deepPurpleAccent),
-                        title: Text(comentario.comentarioLugar),
-                        subtitle: Text('Lugar ID: ${comentario.lugarId} | Usuario ID: ${comentario.usuarioId}'),
-                        trailing: comentario.id != null
-                            ? IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _eliminarComentario(comentario.id!),
-                              )
-                            : const SizedBox(),
-                      ),
+                final comentarios = snapshot.data!;
+
+                return FutureBuilder<List<Usuario>>(
+                  future: _usuariosFuture,
+                  builder: (context, userSnapshot) {
+                    if (userSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (!userSnapshot.hasData || userSnapshot.data!.isEmpty) {
+                      return const Text('No hay usuarios disponibles para mostrar comentarios.');
+                    }
+
+                    final usuarios = {for (var u in userSnapshot.data!) u.Id: u.NombreUsuario};
+
+                    return FutureBuilder<List<Lugare>>(
+                      future: _lugaresFuture,
+                      builder: (context, lugarSnapshot) {
+                        if (lugarSnapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (!lugarSnapshot.hasData || lugarSnapshot.data!.isEmpty) {
+                          return const Text('No hay lugares disponibles.');
+                        }
+
+                        final lugares = {for (var l in lugarSnapshot.data!) l.Id: l.NombreLugar};
+
+                        final Map<int, List<Comentario>> comentariosPorLugar = {};
+                        for (var comentario in comentarios) {
+                          comentariosPorLugar.putIfAbsent(comentario.lugarId, () => []).add(comentario);
+                        }
+
+                        return Column(
+                          children: comentariosPorLugar.entries.map((entry) {
+                            final lugarId = entry.key;
+                            final comentariosDelLugar = entry.value;
+                            final nombreLugar = lugares[lugarId] ?? 'Lugar desconocido';
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Lugar: $nombreLugar',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    color: Colors.deepPurple,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ...comentariosDelLugar.map((comentario) {
+                                  final nombreUsuario = usuarios[comentario.usuarioId] ?? 'Usuario desconocido';
+
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(vertical: 6),
+                                    child: ListTile(
+                                      leading: const Icon(Icons.comment, color: Colors.deepPurpleAccent),
+                                      title: Text(comentario.comentarioLugar),
+                                      subtitle: Text('Usuario: $nombreUsuario'),
+                                      trailing: comentario.id != null
+                                          ? IconButton(
+                                              icon: const Icon(Icons.delete, color: Colors.red),
+                                              onPressed: () => _eliminarComentario(comentario.id!),
+                                            )
+                                          : const SizedBox(),
+                                    ),
+                                  );
+                                }).toList(),
+                                const SizedBox(height: 16),
+                              ],
+                            );
+                          }).toList(),
+                        );
+                      },
                     );
-                  }).toList(),
+                  },
                 );
               },
             ),
