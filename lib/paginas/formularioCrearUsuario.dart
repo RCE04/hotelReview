@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../modelos/usuarios.dart';
 import '../servicios/usuarioService.dart';
-import 'inicioSesion.dart';  // Asegúrate de que esta ruta es correcta
+// import 'inicioSesion.dart';
 
 class FormularioCrearUsuario extends StatefulWidget {
   const FormularioCrearUsuario({super.key});
@@ -40,12 +40,7 @@ class _FormularioCrearUsuarioState extends State<FormularioCrearUsuario> {
       _mensaje = exito ? 'Usuario creado exitosamente.' : 'Error al crear usuario.';
     });
 
-    if (exito) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const InicioSesionPage()),
-      );
-    }
+    // Eliminado: redirección a InicioSesionPage
   }
 
   @override

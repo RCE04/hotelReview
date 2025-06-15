@@ -1,14 +1,20 @@
+// Importación de paquetes necesarios
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
+// Importación de modelos de datos
 import '../modelos/lugares.dart';
 import '../modelos/comentarios.dart';
 import '../modelos/usuarios.dart';
+
+// Importación de servicios para obtener datos
 import '../servicios/comentarioService.dart';
 import '../servicios/usuarioService.dart';
 import '../servicios/sesionService.dart';
 
+// Widget principal: Página que muestra los detalles de un lugar
 class LugarDetallePage extends StatefulWidget {
-  final Lugare lugar;
+  final Lugare lugar; // Lugar que se va a mostrar
 
   const LugarDetallePage({super.key, required this.lugar});
 
@@ -16,26 +22,44 @@ class LugarDetallePage extends StatefulWidget {
   State<LugarDetallePage> createState() => _LugarDetallePageState();
 }
 
+// Clase que mantiene el estado de la página
 class _LugarDetallePageState extends State<LugarDetallePage> {
+  // Lista futura de comentarios para el lugar
   late Future<List<Comentario>> _comentariosFuture;
+
+  // Identificador y datos del usuario actual
   int? _usuarioId;
   Usuario? _usuario;
+
+  // Estado para saber si el lugar es favorito o no
   bool _esFavorito = false;
 
+  // URL base de la API
   static const String apiBaseUrl = 'https://hotelreviewapi.onrender.com/api';
 
   @override
   void initState() {
     super.initState();
+
+    // Carga los comentarios del lugar al iniciar
     _comentariosFuture = fetchComentariosPorLugar(widget.lugar.Id);
+
+    // Carga los datos de sesión del usuario actual
     _cargarSesion();
   }
 
+  // Método para cargar el usuario actual desde la sesión
   Future<void> _cargarSesion() async {
     final id = await SesionService.obtenerUsuarioId();
     if (id != null) {
       final usuario = await fetchUsuarioPorId(id);
-      final favoritos = usuario.Favoritos?.split(',').map((e) => int.tryParse(e)).whereType<int>().toList() ?? [];
+
+      // Convertir la lista de favoritos de string a lista de enteros
+      final favoritos = usuario.Favoritos?.split(',')
+              .map((e) => int.tryParse(e))
+              .whereType<int>()
+              .toList() ??
+          [];
 
       setState(() {
         _usuarioId = id;
@@ -45,6 +69,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
     }
   }
 
+  // Método para alternar entre añadir o eliminar el lugar de favoritos
   Future<void> _alternarFavorito() async {
     if (_usuarioId == null) return;
 
@@ -74,6 +99,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
     }
   }
 
+  // Construye los íconos de estrellas según la puntuación
   Widget _buildPuntuacionStars(double puntuacion) {
     int fullStars = puntuacion.floor();
     bool hasHalfStar = puntuacion - fullStars >= 0.5;
@@ -88,6 +114,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
     );
   }
 
+  // Obtiene el nombre del usuario a partir del ID
   Future<String> _getUsuarioNombre(int usuarioId) async {
     try {
       Usuario usuario = await fetchUsuarioPorId(usuarioId);
@@ -97,6 +124,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
     }
   }
 
+  // Muestra los datos del lugar y el botón de favoritos
   Widget _datosYBoton(Lugare lugar) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,6 +158,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
     );
   }
 
+  // Construcción de la interfaz de usuario principal
   @override
   Widget build(BuildContext context) {
     final lugar = widget.lugar;
@@ -151,9 +180,11 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                     builder: (context, constraints) {
                       bool esAnchoPequeno = constraints.maxWidth < 600;
                       return esAnchoPequeno
+                          // Diseño para pantallas pequeñas (vertical)
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
+                                // Imagen del lugar
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: Image.network(
@@ -173,6 +204,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                                 _datosYBoton(lugar),
                               ],
                             )
+                          // Diseño para pantallas grandes (horizontal)
                           : Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -201,6 +233,8 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
               ),
             ),
             const SizedBox(height: 32),
+
+            // Sección de puntuación media
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: FutureBuilder<List<Comentario>>(
@@ -238,6 +272,8 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                 },
               ),
             ),
+
+            // Sección de comentarios
             const Divider(height: 32),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -245,6 +281,8 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
+
+            // Lista de comentarios
             FutureBuilder<List<Comentario>>(
               future: _comentariosFuture,
               builder: (context, snapshot) {
@@ -269,6 +307,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
                     final c = comentarios[index];
                     final puntuacion = double.tryParse(c.puntuacion) ?? 0.0;
 
+                    // Obtener el nombre del usuario para cada comentario
                     return FutureBuilder<String>(
                       future: _getUsuarioNombre(c.usuarioId),
                       builder: (context, userSnapshot) {
@@ -308,6 +347,8 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
           ],
         ),
       ),
+
+      // Botón flotante para añadir un nuevo comentario
       floatingActionButton: _usuarioId != null
           ? FloatingActionButton.extended(
               onPressed: () async {
