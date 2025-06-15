@@ -138,7 +138,7 @@ class _LugarDetallePageState extends State<LugarDetallePage> {
         const SizedBox(height: 6),
         Text('📝 Descripción: ${lugar.Descripcion}', style: const TextStyle(fontSize: 18)),
         const SizedBox(height: 6),
-        Text('💲 Precio por noche: ${lugar.Precio}', style: const TextStyle(fontSize: 18)),
+        Text('💲 Precio por noche: ${lugar.Precio} €', style: const TextStyle(fontSize: 18)),
         const SizedBox(height: 12),
         if (_usuarioId != null)
           Align(
